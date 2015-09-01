@@ -214,11 +214,13 @@ void _reconnect_to_addr(struct rsocket *n) {
   uint64_t magic = RSOCKET_VERIFY;
 
   for (i=0; i<RETRIES; i++) {
-    random_sleep(i);
-    fprintf(stderr, "[Network] Reconnect attempt %"PRId64" to %s:%s\n",
-	    i, n->address, n->port);
+    if (i) {
+      random_sleep(i);
+      fprintf(stderr, "[Network] Reconnect attempt %"PRId64" to %s:%s\n",
+	      i, n->address, n->port);
+    }
     n->fd = _connect_to_addr(n->address, n->port); //Always succeeds
-
+    
     if ((_send_to_socket(n->fd, &(magic), sizeof(uint64_t)) <= 0) || 
 	(_send_to_socket(n->fd, &(n->magic), sizeof(uint64_t)) <= 0)) {
       fprintf(stderr, "[Network] Failed to send magic number to %s:%s during reconnection attempt %"PRId64"\n", n->address, n->port, i);
