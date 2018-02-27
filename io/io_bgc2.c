@@ -93,7 +93,7 @@ struct fast3tree *ep_tree, *ep_tree2=NULL;
 struct fast3tree_results *ep_res;
 float ep_old_minmax[6];
 
-inline void insertion_sort_extended_particles(int64_t min, int64_t max,
+void insertion_sort_extended_particles(int64_t min, int64_t max,
                 struct extended_particle **particles, float *radii) {
   int64_t i, pos;
   float r;
@@ -280,6 +280,8 @@ void output_bgc2(int64_t id_offset, int64_t snap, int64_t chunk, float *bounds)
       }
     }
 
+    if (STRICT_SO_MASSES) halos[i].r = cbrt(halos[i].m/dens_thresh[0]);
+
     if (!write_bgc2_file) continue;
     j = npart;
     if (j<0) {
@@ -344,8 +346,11 @@ void output_bgc2(int64_t id_offset, int64_t snap, int64_t chunk, float *bounds)
     id++;
   }
 
-  if (STRICT_SO_MASSES)
+  if (STRICT_SO_MASSES) {
     output_binary(id_offset, snap, chunk, bounds, 0);
+    if (!strcasecmp(OUTPUT_FORMAT, "BOTH") || !strcasecmp(OUTPUT_FORMAT, "ASCII"))
+      output_ascii(id_offset, snap, chunk, bounds);
+  }
 
   if (write_bgc2_file) {
     rewind(output);
