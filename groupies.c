@@ -617,12 +617,14 @@ void norm_sd(struct fof *f, float thresh) {
   for (j=0; j<6; j++) pos[j]/=(double)f->num_p;
   for (j=0; j<6; j++) for (k=0; k<6; k++) corr[j][k] = 0;
 
-  for (i=0; i<f->num_p; i++)
-    for (j=0; j<6; j++) {
+  for (i=0; i<f->num_p; i++) {
+    for (j=0; j<6; j++)
       f->particles[i].pos[j] -= pos[j];
+
+    for (j=0; j<6; j++)
       for (k=j; k<6; k++)
 	corr[j][k]+=f->particles[i].pos[j]*f->particles[i].pos[k];
-    }
+  }
 
   for (j=0; j<6; j++)
     for (k=j; k<6; k++)
@@ -630,7 +632,8 @@ void norm_sd(struct fof *f, float thresh) {
 
   calc_deviations(corr, &sig_x, &sig_v);
   if (f->num_p == num_copies) sig_x *= INITIAL_METRIC_SCALING;
-
+  //else sig_x *= CONTINUED_METRIC_SCALING;
+  
   if (!sig_x || !sig_v) return;
   for (i=0; i<f->num_p; i++)
     for (j=0; j<6; j++)
