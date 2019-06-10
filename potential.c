@@ -13,6 +13,11 @@
 #define POTENTIAL_HALT_AFTER_BOUND 0
 #endif /* !def POTENTIAL_HALT_AFTER_BOUND */
 
+
+//Note: If POTENTIAL_HALT_AFTER_BOUND is set, then algorithm does not compute full potential;
+// it does not need to compute additional potential terms for particles that are bound---if they are bound,
+// they can only become *more* bound by adding more potential terms.
+
 double _distance2(float *p1, float *p2) {
   double dx, r2=0;
   for (int64_t k=0; k<3; k++) { dx=p1[k]-p2[k]; r2+=dx*dx; }
@@ -89,7 +94,9 @@ void _compute_mass_centers(struct tree3_node *n) {
       n->mass_center[j] = pos[j] ? pos[j]/(double)n->num_points : 0;
     _compute_dmin(n);
     n->num_unbound = n->num_points;
+#if POTENTIAL_HALT_AFTER_BOUND
     _ignore_unbound(n);
+#endif
     return;
   }
   _compute_mass_centers(n->left);

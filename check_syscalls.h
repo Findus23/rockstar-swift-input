@@ -36,7 +36,7 @@ void check_mtrim(void);
 
 #define check_realloc_var(x,size,cur,new) { if (cur < new) { cur = new; check_realloc_s(x,size,new); } }
 #define check_realloc_every(x,size,cur,num) { if (!((cur)%(num))) { check_realloc_s(x,size,(cur)+(num)); } }
-#define check_realloc_smart(x,size,cur,new) { if (cur < new) { cur = new*1.05 + 1000; check_realloc_s(x,size,new); } }
+#define check_realloc_smart(x,size,cur,new) { if (cur < new) { cur = new*1.05 + 1000; check_realloc_s(x,size,cur); } }
 
 extern FILE *syscall_logfile;
 

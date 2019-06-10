@@ -265,7 +265,8 @@ void print_child_particles(FILE *output, int64_t i, int64_t pid, int64_t eid) {
   struct particle *p2;
   for (j=0; j<halos[i].num_p; j++) {
     p2 = p + halos[i].p_start + j;
-    fprintf(output, "%f %f %f %f %f %f %"PRId64" %"PRId64" %"PRId64" %"PRId64"\n", p2->pos[0], p2->pos[1], p2->pos[2], p2->pos[3], p2->pos[4], p2->pos[5], p2->id, i, pid, eid);
+    if (OUTPUT_EVERY_N_PARTICLES <=1 || !(p2->id % OUTPUT_EVERY_N_PARTICLES))
+      fprintf(output, "%f %f %f %f %f %f %"PRId64" %"PRId64" %"PRId64" %"PRId64"\n", p2->pos[0], p2->pos[1], p2->pos[2], p2->pos[3], p2->pos[4], p2->pos[5], p2->id, i, pid, eid);
   }
   child = extra_info[i].child;
   while (child > -1) {
@@ -289,6 +290,10 @@ void output_full_particles(int64_t id_offset, int64_t snap, int64_t chunk, float
   fprintf(output, "#Particle table:\n");
   fprintf(output, "#x y z vx vy vz particle_id assigned_internal_haloid internal_haloid external_haloid\n");
 
+  if (OUTPUT_EVERY_N_PARTICLES > 1) {
+    fprintf(output, "#Notes: Only particles with IDs divisible by %"PRId64" are printed.\n", OUTPUT_EVERY_N_PARTICLES);
+  }
+
   fprintf(output, "#Notes: As not all halos are printed, some halos may not have external halo ids.  (Hence the need to print internal halo ids).  Each particle is assigned to a unique halo; however, some properties (such as halo bound mass) are calculated including all substructure.  As such, particles belonging to subhalos are included in outputs; to exclude substructure, verify that the internal halo id is the same as the assigned internal halo id.\n");
 
   print_ascii_header_info(output, bounds, num_p);
@@ -299,8 +304,11 @@ void output_full_particles(int64_t id_offset, int64_t snap, int64_t chunk, float
     if (_should_print(th, bounds)) {
       th->id = id+id_offset;
       id++;
-    } else { th->id = -1; }
-
+    } else {
+      th->id = -1;
+      if (!UNFILTERED_HALO_OUTPUT) continue;
+    }
+    
     fprintf(output, "#%"PRId64" %"PRId64" %"PRId64" %.3e %.3e"
 	    " %f %f %f %f %f %f %f %f %f %f %g %g %g %g %g\n", th->id, i,
 	    th->num_p, th->m, th->mgrav, th->r, th->vmax, th->rvmax, th->vrms,
@@ -309,7 +317,9 @@ void output_full_particles(int64_t id_offset, int64_t snap, int64_t chunk, float
   }
 
   fprintf(output, "#Particle table begins here:\n");
-  for (i=0; i<num_halos; i++) print_child_particles(output, i, i, halos[i].id);
+  for (i=0; i<num_halos; i++)
+    if (UNFILTERED_HALO_OUTPUT || halos[i].id > -1)
+      print_child_particles(output, i, i, halos[i].id);
   fclose(output);
   get_output_filename(buffer, 1024, snap, chunk, "particles");
   //gzip_file(buffer);

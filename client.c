@@ -771,7 +771,9 @@ void do_projections(void) {
     dir = prj[i].dir = prq[i].dir;
     memcpy(prj[i].bounds, prq[i].bounds, sizeof(float)*6);
     for (j=0; j<PROJECTION_SIZE; j++) prj[i].data[j] = 0;
-    for (j=0; j<num_p; j++) {
+  }
+  for (j=0; j<num_p; j++) {
+    for (i=0; i<num_proj; i++) {
       if (check_projection_bounds(p+j, prj+i)) {
 	idx = (double)PROJECTION_SIZE*p[j].pos[dir]/(double)BOX_SIZE;
 	if (idx >= PROJECTION_SIZE) idx = PROJECTION_SIZE-1;

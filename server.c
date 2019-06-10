@@ -29,6 +29,8 @@ int64_t num_clients = 0;
 int64_t time_start = 0;
 int64_t server_error_state = 0;
 
+float all_particle_bounds[6] = {0};
+
 #define for_writers(x) for (x=NUM_READERS; x<num_clients; x++)
 
 void print_time(void) {
@@ -256,6 +258,7 @@ void decide_boundaries() {
   for (reader=0; reader < NUM_READERS; reader++)
     send_to_socket_noconfirm(clients[reader].cs, "cnf?", 4);
 
+  memset(all_particle_bounds, 0, sizeof(float)*6);
   for (reader=0; reader < NUM_READERS; reader++) {
     recv_from_socket(clients[reader].cs, cmd, 4);
     protocol_check(cmd, "bxsz");
@@ -266,6 +269,9 @@ void decide_boundaries() {
     recv_from_socket(clients[reader].cs, cmd, 4);
     protocol_check(cmd, "cnfg");
     recv_config(clients[reader].cs);
+
+    if (reader==0) memcpy(all_particle_bounds, clients[reader].bounds, sizeof(float)*6);
+    else bounds_union(all_particle_bounds, clients[reader].bounds, all_particle_bounds);
   }
   if ((BOX_SIZE < OVERLAP_LENGTH * 5) && PERIODIC) {
     shutdown_clients();

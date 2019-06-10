@@ -7,5 +7,5 @@ int bounds_overlap(float *b1, float *b2, float *b3, double overlap);
 void wrap_into_box(float *pos);
 void render_ccache(int64_t *ccache, int64_t ccache_size, float *bounds, float *ccache_bounds, int64_t val);
 int64_t check_ccache(int64_t *ccache, int64_t ccache_size, float *pos, float *ccache_bounds);
-
+void bounds_union(float *b1, float *b2, float *result);
 #endif /* _BOUNDS_H_ */

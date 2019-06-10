@@ -56,3 +56,11 @@ int bounds_overlap(float *b1, float *b2, float *b3, double overlap) {
   }
   return 1;
 }
+
+void bounds_union(float *b1, float *b2, float *result) {
+  int64_t i=0;
+  for (i=0; i<3; i++)
+    result[i] = (b1[i] < b2[i]) ? b1[i] : b2[i];
+  for (; i<6; i++)
+    result[i] = (b1[i] > b2[i]) ? b1[i] : b2[i];
+}

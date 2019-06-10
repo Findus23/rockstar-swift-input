@@ -1,5 +1,5 @@
 /* The Rockstar Halo Finder.
-   Copyright (C) 2011-2013  Peter Behroozi
+   Copyright (C) 2011-2018  Peter Behroozi
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ int main(int argc, char **argv)
   srand(1);
   if (argc < 2) {
     printf("Rockstar Halo Finder, Version %s\n", ROCKSTAR_VERSION);
-    printf("(C) 2011-2013 Peter Behroozi.  See the LICENSE file for redistribution details.\n");
+    printf("(C) 2011-2018 Peter Behroozi.  See the LICENSE file for redistribution details.\n");
     printf("Usage: %s [-c config] [-s snapnum] [-b blocknum]\n", argv[0]);
     exit(1);
   }

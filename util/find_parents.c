@@ -27,8 +27,8 @@ struct halo_tree halo_tree = {0};
 #include "../parents.c"
 #undef parent
 
-void read_hlist(char *filename) {
-  int64_t n, c=0;
+void read_hlist(char *filename, float *bounds) {
+  int64_t i, n, c=0;
   FILE *input;
   struct halo h = {0};
   char buffer[1024];
@@ -79,6 +79,15 @@ void read_hlist(char *filename) {
     }
     n = stringparse(buffer, data, (enum parsetype *)types, NUM_INPUTS);
     if (n<NUM_INPUTS) continue;
+    if (bounds) {
+      float rvir = h.rvir/1.0e3; //in Mpc/h
+      for (i=0; i<3; i++) {
+	if (((h.pos[i] + rvir < bounds[i]) && (h.pos[i] - rvir + BOX_SIZE > bounds[i+3])) ||
+	    ((h.pos[i] - rvir > bounds[i+3]) && (h.pos[i] + rvir - BOX_SIZE < bounds[i])))
+	  break;
+      }
+      if (i<3) continue;
+    }
     if (!(all_halos.num_halos%3000))
       all_halos.halos = check_realloc(all_halos.halos, sizeof(struct halo)*(all_halos.num_halos+3000), "Allocating Halos.");
    
@@ -97,6 +106,11 @@ void read_hlist(char *filename) {
 
   for (n=0; n<all_halos.num_halos; n++) {
     struct halo *th = all_halos.halos + n;
+    if (bounds) {
+      for (i=0; i<3; i++)
+	if ((th->pos[i] < bounds[i]) || (th->pos[i] >= bounds[i+3])) break;
+      if (i<3) continue;
+    }
     printf("%"PRId64" %"PRId64" %.3e %.2f %.2f %.3f %.3f %"PRId64" %.5f %.5f %.5f %.2f %.2f %.2f %.3e %.3e %.3e %.5f %.5f %.4e %.4e %.4e %.4e %.4e %.5f %.2f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.4f %.3e %.3e %.3f %"PRId64"\n",
 	   th->id, th->descid, th->mvir, th->vmax, th->vrms, th->rvir, th->rs,
 	   th->np, th->pos[0], th->pos[1], th->pos[2], th->vel[0], th->vel[1],
@@ -111,12 +125,19 @@ void read_hlist(char *filename) {
 
 int main(int argc, char **argv)
 {
-  if (argc < 2) {
-    printf("Usage: %s out_XYZ.list box_size\n", argv[0]);
-    exit(1);
+  int64_t i;
+  float bounds[6] = {0};
+  if (argc < 2 || ((argc > 3 && argc < 9))) {
+    printf("Usage: %s out_XYZ.list box_size [x_min y_min z_min x_max y_max z_max]\n", argv[0]);
+    printf("Note: all dimensions must be present if selecting halos within a fraction of the box volume.\n");
+    exit(EXIT_FAILURE);
   }
   if (argc > 2) BOX_SIZE = atof(argv[2]);
-  read_hlist(argv[1]);
+  if (argc >=9) {
+    for (i=0; i<6; i++) bounds[i] = atof(argv[3+i]);
+    read_hlist(argv[1], bounds);
+  }
+  else read_hlist(argv[1], NULL);
   return 0;
 }
 

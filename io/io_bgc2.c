@@ -280,7 +280,7 @@ void output_bgc2(int64_t id_offset, int64_t snap, int64_t chunk, float *bounds)
       }
     }
 
-    if (STRICT_SO_MASSES) halos[i].r = cbrt(halos[i].m/dens_thresh[0]);
+    if (STRICT_SO_MASSES) halos[i].r = cbrt(halos[i].m/dens_thresh[0])*1e3;
 
     if (!write_bgc2_file) continue;
     j = npart;
