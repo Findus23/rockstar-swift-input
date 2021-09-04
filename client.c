@@ -764,7 +764,7 @@ void transfer_stuff(int64_t s, int64_t c, int64_t timestep) {
 }
 
 void do_projections(void) {
-  int64_t i, j, idx, dir;
+  int64_t i, j, idx, dir=0;
   assert(BOX_SIZE > 0);
   for (i=0; i<num_proj; i++) {
     prj[i].id = prq[i].id;
