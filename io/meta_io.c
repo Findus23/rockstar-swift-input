@@ -18,13 +18,14 @@
 #include "io_gadget.h"
 #include "io_generic.h"
 #include "io_internal.h"
-#include "io_tipsy.h"
+//#include "io_tipsy.h"
 #include "meta_io.h"
 #include "../distance.h"
 #include "../version.h"
 
 #ifdef ENABLE_HDF5
 #include "io_arepo.h"
+#include "io_swift.h"
 #endif /* ENABLE_HDF5 */
 
 char **snapnames = NULL;
@@ -41,7 +42,7 @@ void read_input_names(char *filename, char ***stringnames, int64_t *num_names) {
     while (strlen(buffer) && buffer[strlen(buffer)-1]=='\n')
       buffer[strlen(buffer)-1] = 0;
     if (!strlen(buffer)) continue;
-    if (!(i%10)) names = check_realloc(names, sizeof(char *)*(i+10), 
+    if (!(i%10)) names = check_realloc(names, sizeof(char *)*(i+10),
 					   "Allocating snapshot names.");
     names[i] = strdup(buffer);
     i++;
@@ -72,9 +73,12 @@ void get_input_filename(char *buffer, int maxlen, int64_t snap, int64_t block) {
 	      !strncasecmp(FILE_FORMAT, "LGADGET", 7) ||
 	      !strncasecmp(FILE_FORMAT, "AREPO", 5))
 	    snprintf(buffer+out, maxlen-out, "%03"PRId64, snap);
+      else if (!strncasecmp(FILE_FORMAT, "SWIFT", 5)) {
+        snprintf(buffer+out, maxlen-out, "%04"PRId64, snap);
+      }
 	  else snprintf(buffer+out, maxlen-out, "%"PRId64, snap);
 	}
-      } 
+      }
       else if (!strncmp(FILENAME+i, "<block>", 7)) {
 	i+=6;
 	if (blocknames) snprintf(buffer+out, maxlen-out,"%s",blocknames[block]);
@@ -109,7 +113,7 @@ void read_particles(char *filename) {
     load_particles_gadget2(filename, &p, &num_p);
     gadget = 1;
   }
-  else if (!strncasecmp(FILE_FORMAT, "ART", 3)) 
+  else if (!strncasecmp(FILE_FORMAT, "ART", 3))
     load_particles_art(filename, &p, &num_p);
   else if (!strncasecmp(FILE_FORMAT, "INTERNAL", 8)) {
     load_particles_internal(filename, &p, &num_p);
@@ -118,15 +122,25 @@ void read_particles(char *filename) {
     assert(load_particles_generic != NULL);
     load_particles_generic(filename, &p, &num_p);
   }
-  else if (!strncasecmp(FILE_FORMAT, "TIPSY", 5)) {
-    load_particles_tipsy(filename, &p, &num_p);
-  }
+//  else if (!strncasecmp(FILE_FORMAT, "TIPSY", 5)) {
+//    load_particles_tipsy(filename, &p, &num_p);
+//  }
   else if (!strncasecmp(FILE_FORMAT, "AREPO", 5)) {
 #ifdef ENABLE_HDF5
-    load_particles_arepo(filename, &p, &num_p);
+      load_particles_arepo(filename, &p, &num_p);
 #else
-    fprintf(stderr, "[Error] AREPO needs HDF5 support.  Recompile Rockstar using \"make with_hdf5\".\n");
-    exit(1);
+      fprintf(stderr, "[Error] AREPO needs HDF5 support.  Recompile Rockstar using \"make with_hdf5\".\n");
+      exit(1);
+#endif
+  }
+  else if (!strncasecmp(FILE_FORMAT, "SWIFT", 5)) {
+#ifdef ENABLE_HDF5
+      printf("load swift\n");
+      load_particles_swift(filename, &p, &num_p);
+      printf("finished loading swift\n");
+#else
+      fprintf(stderr, "[Error] SWIFT needs HDF5 support.  Recompile Rockstar using \"make with_hdf5\".\n");
+      exit(1);
 #endif
   }
   else {
@@ -154,7 +168,7 @@ void read_particles(char *filename) {
 	if (LIGHTCONE_ORIGIN[i] || LIGHTCONE_ALT_ORIGIN[i]) break;
       if (i<3) { //Same box coordinates, different intended locations
 	if (LIGHTCONE == 1) {
-	  for (i=0; i<3; i++) origin_offset[i] = LIGHTCONE_ORIGIN[i] - 
+	  for (i=0; i<3; i++) origin_offset[i] = LIGHTCONE_ORIGIN[i] -
 				LIGHTCONE_ALT_ORIGIN[i];
 	}
       } else { //Offset everything
@@ -201,7 +215,7 @@ int64_t print_ascii_header_info(FILE *output, float *bounds, int64_t np) {
   chars += fprintf(output, "#a = %f\n", SCALE_NOW);
   if (bounds)
     chars += fprintf(output, "#Bounds: (%f, %f, %f) - (%f, %f, %f)\n",
-		     bounds[0], bounds[1], bounds[2], 
+		     bounds[0], bounds[1], bounds[2],
 		     bounds[3], bounds[4], bounds[5]);
   chars += fprintf(output, "#Om = %f; Ol = %f; h = %f\n", Om, Ol, h0);
   chars += fprintf(output, "#FOF linking length: %f\n", FOF_LINKING_LENGTH);
@@ -249,7 +263,7 @@ void output_ascii(int64_t id_offset, int64_t snap, int64_t chunk, float *bounds)
 	    th->pos[5], th->J[0], th->J[1], th->J[2], th->energy, th->spin,
 	    sqrt(th->min_pos_err), sqrt(th->min_vel_err), th->bulkvel[0],
 	    th->bulkvel[1], th->bulkvel[2], sqrt(th->min_bulkvel_err),
-	    th->n_core, th->alt_m[0], th->alt_m[1], th->alt_m[2], th->alt_m[3], 
+	    th->n_core, th->alt_m[0], th->alt_m[1], th->alt_m[2], th->alt_m[3],
 	    th->Xoff, th->Voff, th->bullock_spin, th->b_to_a, th->c_to_a,
 	    th->A[0], th->A[1], th->A[2], th->b_to_a2, th->c_to_a2,
 	    th->A2[0], th->A2[1], th->A2[2], th->rs, th->klypin_rs, th->kin_to_pot,
@@ -298,7 +312,7 @@ void output_full_particles(int64_t id_offset, int64_t snap, int64_t chunk, float
 
   print_ascii_header_info(output, bounds, num_p);
   fprintf(output, "#Halo table begins here:\n");
-  
+
   for (i=0; i<num_halos; i++) {
     th = halos+i;
     if (_should_print(th, bounds)) {
@@ -308,7 +322,7 @@ void output_full_particles(int64_t id_offset, int64_t snap, int64_t chunk, float
       th->id = -1;
       if (!UNFILTERED_HALO_OUTPUT) continue;
     }
-    
+
     fprintf(output, "#%"PRId64" %"PRId64" %"PRId64" %.3e %.3e"
 	    " %f %f %f %f %f %f %f %f %f %f %g %g %g %g %g\n", th->id, i,
 	    th->num_p, th->m, th->mgrav, th->r, th->vmax, th->rvmax, th->vrms,
@@ -375,7 +389,7 @@ char *gen_merger_catalog(int64_t snap, int64_t chunk, struct halo *halos, int64_
     hchars += print_ascii_header_info(output, NULL, 0);
     fclose(output);
   }
-  
+
   for (i=0; i<num_halos; i++) {
     if (chars + 1024 > chars_a) {
       chars_a = chars + 10000;
@@ -394,7 +408,7 @@ char *gen_merger_catalog(int64_t snap, int64_t chunk, struct halo *halos, int64_
 	    th->klypin_rs, th->m, th->alt_m[0], th->alt_m[1], th->alt_m[2],
 	    th->alt_m[3], th->Xoff, th->Voff, th->bullock_spin, th->b_to_a,
 	    th->c_to_a, th->A[0], th->A[1], th->A[2], th->b_to_a2, th->c_to_a2,
-	    th->A2[0], th->A2[1], th->A2[2], th->kin_to_pot, 
+	    th->A2[0], th->A2[1], th->A2[2], th->kin_to_pot,
 	    th->m_pe_b, th->m_pe_d, th->halfmass_radius);
   }
   *cat_length = chars;

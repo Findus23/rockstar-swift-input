@@ -123,23 +123,33 @@ void load_particles_swift(char *filename, struct particle **p, int64_t *num_p)
   swift_readheader_array(HDF_Header, filename, "NumPart_ThisFile", H5T_NATIVE_UINT64, npart);
   swift_readheader_array(HDF_Header, filename, "NumPart_Total_HighWord", H5T_NATIVE_UINT32, npart_high);
   swift_readheader_array(HDF_Header, filename, "NumPart_Total", H5T_NATIVE_UINT32, npart_low);
-//   swift_readheader_array(HDF_Header, filename, "InitialMassTable", H5T_NATIVE_FLOAT, massTable);
+  swift_readheader_array(HDF_Header, filename, "InitialMassTable", H5T_NATIVE_FLOAT, massTable);
 
-  for (int64_t i=0; i<SWIFT_NTYPES; i++){
-    if (NumPart_Total[i] > 0){
-        float masses[NumPart_Total[i]];
-        std::string PartType = "PartType";
-        PartType += std::to_string(i);
-        hid_t HDF_PartType = check_H5Gopen(HDF_FileID, PartType, filename);
-        swift_readheader_array(HDF_PartType, filename, "Masses", H5T_NATIVE_FLOAT, masses);
-        massTable[i] = masses[0] * h0; //This will give Msun/h in the end
-        H5Gclose(HDF_PartType);
-    } 
-    else
-        massTable[i] = 0.0;
-  }
-  
-  TOTAL_PARTICLES = ( ((int64_t)npart_high[SWIFT_DM_PARTTYPE]) << 32 ) 
+//    for (int i = 0; i < SWIFT_NTYPES; i++) {
+//        if (npart_low[i] > 0) {
+//            char parttype[10];
+//            sprintf(parttype, "PartType%d", i);
+//            printf("AAAAAAAA: %s\n", parttype);
+//            hid_t HDF_GroupID = check_H5Gopen(HDF_FileID, parttype, filename);
+//            hid_t HDF_DatasetID = check_H5Dopen(HDF_GroupID, "Masses", parttype, filename);
+//            printf("opened\n");
+//            float mass[1];
+//// FIXME: the next line just hangs. Probably reading just the first value doesn't work
+//            check_H5Dread(HDF_DatasetID, H5T_NATIVE_FLOAT, mass, "Masses", parttype, filename);
+//            printf("loaded\n");
+//
+//            massTable[i] = mass[0] * h0; //This will give Msun/h in the end
+//            H5Gclose(HDF_GroupID);
+//            H5Dclose(HDF_DatasetID);
+//            printf("particles finished\n");
+//
+//        } else {
+//            massTable[i] = 0.0;
+//        }
+//    }
+
+
+  TOTAL_PARTICLES = ( ((int64_t)npart_high[SWIFT_DM_PARTTYPE]) << 32 )
     + (int64_t)npart_low[SWIFT_DM_PARTTYPE];
   
   H5Gclose(HDF_Header);
