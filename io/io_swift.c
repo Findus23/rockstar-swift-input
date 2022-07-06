@@ -94,17 +94,13 @@ void swift_readheader_array(hid_t HDF_GroupID, char *filename, char *objName, hi
   H5Aclose(HDF_AttrID);
 }
 
-// void swift_rescale_particles(struct particle *p, int64_t p_start, int64_t nelems) {
-//   double vel_rescale = sqrt(SCALE_NOW);
-//   if (LIGHTCONE) vel_rescale = 1;
-	
-//   for (int64_t i=0; i<nelems; i++) {
-//     for (int64_t j=0; j<3; j++) {
-//       p[p_start+i].pos[j]   *= SWIFT_LENGTH_CONVERSION;
-//       p[p_start+i].pos[j+3] *= vel_rescale;
-//     }
-//   }
-// }
+void swift_rescale_particles(struct particle *p, int64_t p_start, int64_t nelems) {
+  for (int64_t i=0; i<nelems; i++) {
+    for (int64_t j=0; j<3; j++) {
+      p[p_start+i].pos[j]   *= h0;
+    }
+  }
+}
 
 void load_particles_swift(char *filename, struct particle **p, int64_t *num_p)
 {	
@@ -117,7 +113,8 @@ void load_particles_swift(char *filename, struct particle **p, int64_t *num_p)
   h0 = swift_readheader_float(HDF_Cosmology, filename, "h");
   SCALE_NOW = swift_readheader_float(HDF_Cosmology, filename, "Scale-factor");
   BOX_SIZE = swift_readheader_float(HDF_Header, filename, "BoxSize");
-  BOX_SIZE *= SWIFT_LENGTH_CONVERSION;  
+  BOX_SIZE *= SWIFT_LENGTH_CONVERSION;
+  BOX_SIZE *= h0;  //Rockstar wants Mpc/h
   
   uint32_t npart_low[SWIFT_NTYPES], npart_high[SWIFT_NTYPES] = {0};
   int64_t npart[SWIFT_NTYPES];
@@ -135,7 +132,7 @@ void load_particles_swift(char *filename, struct particle **p, int64_t *num_p)
         PartType += std::to_string(i);
         hid_t HDF_PartType = check_H5Gopen(HDF_FileID, PartType, filename);
         swift_readheader_array(HDF_PartType, filename, "Masses", H5T_NATIVE_FLOAT, masses);
-        massTable[i] = masses[0];
+        massTable[i] = masses[0] * h0; //This will give Msun/h in the end
         H5Gclose(HDF_PartType);
     } 
     else
@@ -155,13 +152,13 @@ void load_particles_swift(char *filename, struct particle **p, int64_t *num_p)
     PARTICLE_MASS = Om*CRITICAL_DENSITY * pow(BOX_SIZE, 3) / TOTAL_PARTICLES;
  
   printf("SWIFT: filename:       %s\n", filename);
-  printf("SWIFT: box size:       %g Mpc\n", BOX_SIZE);
+  printf("SWIFT: box size:       %g Mpc/h\n", BOX_SIZE);
   printf("SWIFT: h0:             %g\n", h0);
   printf("SWIFT: scale factor:   %g\n", SCALE_NOW);
   printf("SWIFT: Total DM Part:  %" PRIu64 "\n", TOTAL_PARTICLES);
   printf("SWIFT: ThisFile DM Part: %" PRIu64 "\n", npart[SWIFT_DM_PARTTYPE]);
-  printf("SWIFT: DM Part Mass:   %g Msun\n", PARTICLE_MASS);
-  printf("SWIFT: avgPartSpacing: %g Mpc\n\n", AVG_PARTICLE_SPACING);
+  printf("SWIFT: DM Part Mass:   %g Msun/h\n", PARTICLE_MASS);
+  printf("SWIFT: avgPartSpacing: %g Mpc/h\n\n", AVG_PARTICLE_SPACING);
   
   if (!npart[SWIFT_DM_PARTTYPE]) {
     H5Fclose(HDF_FileID);
@@ -184,7 +181,7 @@ void load_particles_swift(char *filename, struct particle **p, int64_t *num_p)
 
   H5Fclose(HDF_FileID);
   
-//   swift_rescale_particles(*p, *num_p, to_read); //should not be necessary thanks to smart Swift units
+  swift_rescale_particles(*p, *num_p, to_read); //only necessary to convert to Mpc/h
   
   *num_p += npart[SWIFT_DM_PARTTYPE];
 }
