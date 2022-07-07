@@ -83,13 +83,13 @@ void accept_clients(int64_t s) {
     }
 
     recv_from_socket(c, cmd, 4);
-    if ((num_readers < NUM_READERS) && 
+    if ((num_readers < NUM_READERS) &&
 	(!strcmp(cmd, "read") || !strcmp(cmd, "rdwr"))) {
       accepted_client = num_readers;
       num_readers++;
       send_to_socket_noconfirm(c, "read", 4);
     }
-    else if ((num_writers < NUM_WRITERS) && 
+    else if ((num_writers < NUM_WRITERS) &&
 	     (!strcmp(cmd, "writ") || !strcmp(cmd, "rdwr"))) {
       accepted_client = NUM_READERS + num_writers;
       send_to_socket_noconfirm(c, "writ", 4);
@@ -196,7 +196,7 @@ int sort_by_address(const void *a, const void *b) {
 
 void sort_clients() {
   qsort(clients, NUM_READERS, sizeof(struct client_info), sort_by_address);
-  qsort(clients+NUM_READERS, NUM_WRITERS, 
+  qsort(clients+NUM_READERS, NUM_WRITERS,
 	sizeof(struct client_info), sort_by_address);
 }
 
@@ -509,7 +509,7 @@ int64_t setup_server_port(void) {
       s_address = get_interface_address(s_iface);
       if (s_address) addr_found = 1;
     }
-    
+
     if (!addr_found) {
       s_address = check_realloc(NULL, 1024, "Allocating hostname.");
       if (gethostname(s_address, 1023)<0) {
@@ -518,7 +518,7 @@ int64_t setup_server_port(void) {
       }
     }
   }
-  
+
   if (!strcasecmp(s_port, "auto")) {
     auto_port = 1;
     s_port = check_realloc(NULL, sizeof(char)*10, "Allocating port.");
@@ -528,7 +528,7 @@ int64_t setup_server_port(void) {
       if (s>=0) break;
     }
   }
-  else 
+  else
     s = listen_at_addr(s_address, s_port);
 
   if (s<0) {
@@ -538,7 +538,7 @@ int64_t setup_server_port(void) {
     }
     else return -1; //Must be a client
   }
-  
+  IS_CLIENT = 1;
   output_config("auto-rockstar.cfg");
   if (auto_addr) {
     free(s_address);
@@ -550,7 +550,7 @@ int64_t setup_server_port(void) {
   }
 
   return s;
-}  
+}
 
 int server(void) {
   char buffer[1024];
@@ -583,7 +583,7 @@ int server(void) {
       decide_boundaries();
       transfer_particles();
       if (server_error_state) { reset_error(); reload_parts = 1; continue; }
-      if (PRELOAD_PARTICLES && (snap < NUM_SNAPS-1)) 
+      if (PRELOAD_PARTICLES && (snap < NUM_SNAPS-1))
 	read_blocks(snap+1);
       find_halos(snap);
       if (server_error_state) { reset_error(); reload_parts = 1; continue; }
@@ -601,10 +601,10 @@ int server(void) {
 
     if (strlen(RUN_ON_SUCCESS)) {
       if (snapnames && snapnames[snap])
-	snprintf(buffer, 1024, "%s %"PRId64" %s", 
+	snprintf(buffer, 1024, "%s %"PRId64" %s",
 		 RUN_ON_SUCCESS, snap, snapnames[snap]);
       else
-	snprintf(buffer, 1024, "%s %"PRId64" %"PRId64, 
+	snprintf(buffer, 1024, "%s %"PRId64" %"PRId64,
 		 RUN_ON_SUCCESS, snap, snap);
       n = fork();
       if (n<=0) {

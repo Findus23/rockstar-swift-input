@@ -1,6 +1,6 @@
 //string(a,b) real(a,b) integer(a,b)
-//Sets strings, floats, and integers; 
-//     "a" is the variable name; 
+//Sets strings, floats, and integers;
+//     "a" is the variable name;
 //     "b" is the default.
 
 string(FILE_FORMAT, "GADGET2");
@@ -124,3 +124,4 @@ string(ROCKSTAR_CONFIG_FILENAME, "");
 real(AVG_PARTICLE_SPACING, 0); //Auto-generated
 integer(SINGLE_SNAP, 0);
 
+integer(IS_CLIENT, 0);
