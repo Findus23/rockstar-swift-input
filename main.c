@@ -46,7 +46,7 @@ int main(int argc, char **argv)
     if (!strcmp("-s", argv[i])) { snap = atoi(argv[i+1]); i++; }
   }
   if (!did_config) do_config(NULL);
-  if (strlen(SNAPSHOT_NAMES)) 
+  if (strlen(SNAPSHOT_NAMES))
     read_input_names(SNAPSHOT_NAMES, &snapnames, &NUM_SNAPS);
   if (strlen(BLOCK_NAMES))
     read_input_names(BLOCK_NAMES, &blocknames, &NUM_BLOCKS);
@@ -97,8 +97,12 @@ int main(int argc, char **argv)
       fprintf(stderr, "[Warning] To enable periodic boundary conditions, increase NUM_WRITERS to at least 8.\n");
       PERIODIC = 0;
     }
-    s = server();
-    if (!s) client(-1);
+    if (IS_CLIENT) {
+      client(-1);
+    } else {
+      s = server();
+      if (!s) client(-1);
+    }
   }
   return 0;
 }
