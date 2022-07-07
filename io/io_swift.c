@@ -123,34 +123,38 @@ void load_particles_swift(char *filename, struct particle **p, int64_t *num_p)
   swift_readheader_array(HDF_Header, filename, "NumPart_ThisFile", H5T_NATIVE_UINT64, npart);
   swift_readheader_array(HDF_Header, filename, "NumPart_Total_HighWord", H5T_NATIVE_UINT32, npart_high);
   swift_readheader_array(HDF_Header, filename, "NumPart_Total", H5T_NATIVE_UINT32, npart_low);
-  swift_readheader_array(HDF_Header, filename, "InitialMassTable", H5T_NATIVE_FLOAT, massTable);
+  // swift_readheader_array(HDF_Header, filename, "InitialMassTable", H5T_NATIVE_FLOAT, massTable); //not sure if we can assume all Swift outputs to have that.
 
    for (int i = 0; i < SWIFT_NTYPES; i++) {
        if (npart_low[i] > 0) {
            char parttype[10];
            sprintf(parttype, "PartType%d", i);
-           printf("AAAAAAAA: %s\n", parttype);
+           printf("SWIFT: %s loading\n", parttype);
            hid_t HDF_GroupID = check_H5Gopen(HDF_FileID, parttype, filename);
            hid_t HDF_DatasetID = check_H5Dopen(HDF_GroupID, "Masses", parttype, filename);
-           printf("opened\n");
            hsize_t coord[1];
            coord[0] = 0; //we should be able to select the first mass since all are equal
            hid_t dataspace_masses = check_H5Dget_space(HDF_DatasetID);
            herr_t status = H5Sselect_elements(dataspace_masses, H5S_SELECT_SET, 1, (const hsize_t *)&coord);
-
+           if (status < 0) {
+            fprintf("[Error] failed to select mass from %s\n", parttype);
+            exit(1);
+           }
            hsize_t number_of_points = 1;
            float mass[number_of_points];
            hid_t helpMemSpace = H5Screate_simple(1, &number_of_points, NULL);
-           herr_t status = H5Dread(HDF_Dataset_ID, H5T_NATIVE_FLOAT, helpMemSpace, dataspace_masses, H5P_DEFAULT, mass)
-
-// FIXME: the next line just hangs. Probably reading just the first value doesn't work
-          //  check_H5Dread(HDF_DatasetID, H5T_NATIVE_FLOAT, mass, "Masses", parttype, filename);
-           printf("loaded\n");
+           herr_t status2 = H5Dread(HDF_Dataset_ID, H5T_NATIVE_FLOAT, helpMemSpace, dataspace_masses, H5P_DEFAULT, mass)
+           if (status2 < 0) {
+            fprintf("[Error] failed to read mass from %s\n", parttype);
+            exit(1);
+           }
+           printf("SWIFT: mass[0] = %f Mpc\n", mass[0]);
 
            massTable[i] = mass[0] * h0; //This will give Msun/h in the end
+           H5Sclose(dataspace_masses);
            H5Gclose(HDF_GroupID);
            H5Dclose(HDF_DatasetID);
-           printf("particles finished\n");
+           printf("SWIFT: %s finished\n", parttype);
 
        } else {
            massTable[i] = 0.0;
