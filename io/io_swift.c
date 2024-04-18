@@ -143,7 +143,7 @@ void load_particles_swift(char *filename, struct particle **p, int64_t *num_p)
            hsize_t number_of_points = 1;
            float mass[number_of_points];
            hid_t helpMemSpace = H5Screate_simple(1, &number_of_points, NULL);
-           herr_t status2 = H5Dread(HDF_Dataset_ID, H5T_NATIVE_FLOAT, helpMemSpace, dataspace_masses, H5P_DEFAULT, mass)
+           herr_t status2 = H5Dread(HDF_DatasetID, H5T_NATIVE_FLOAT, helpMemSpace, dataspace_masses, H5P_DEFAULT, mass);
            if (status2 < 0) {
             fprintf("[Error] failed to read mass from %s\n", parttype);
             exit(1);
