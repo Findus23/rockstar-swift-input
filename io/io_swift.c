@@ -137,16 +137,16 @@ void load_particles_swift(char *filename, struct particle **p, int64_t *num_p)
            hid_t dataspace_masses = check_H5Dget_space(HDF_DatasetID);
            herr_t status = H5Sselect_elements(dataspace_masses, H5S_SELECT_SET, 1, (const hsize_t *)&coord);
            if (status < 0) {
-            fprintf("[Error] failed to select mass from %s\n", parttype);
-            exit(1);
+               fprintf(stderr, "[Error] failed to select mass from %s\n", parttype);
+               exit(1);
            }
            hsize_t number_of_points = 1;
            float mass[number_of_points];
            hid_t helpMemSpace = H5Screate_simple(1, &number_of_points, NULL);
            herr_t status2 = H5Dread(HDF_DatasetID, H5T_NATIVE_FLOAT, helpMemSpace, dataspace_masses, H5P_DEFAULT, mass);
            if (status2 < 0) {
-            fprintf("[Error] failed to read mass from %s\n", parttype);
-            exit(1);
+               fprintf(stderr, "[Error] failed to read mass from %s\n", parttype);
+               exit(1);
            }
            printf("SWIFT: mass[0] = %f Mpc\n", mass[0]);
 
